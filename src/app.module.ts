@@ -3,8 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LogsModule } from './logs/logs.module';
-import { EventsModule } from './events/events.module';
 import { ProjectsModule } from './projects/projects.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -26,12 +24,10 @@ import { APP_GUARD } from '@nestjs/core';
         password: configService.get<string>("DATABASE_PASSWORD"),
         database: configService.get<string>("DATABASE_NAME"),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: true, 
       }),
       inject: [ConfigService],
     }),
-    LogsModule,
-    EventsModule,
     ProjectsModule,
     UsersModule,
     AuthModule

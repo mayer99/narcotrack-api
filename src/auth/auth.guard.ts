@@ -8,8 +8,8 @@ import { AccessToken } from './entities/access_token.entity';
 import { CHECK_SCOPE_KEY } from './decorators/check-scope.decorator';
 import { CHECK_PROJECT_KEY } from './decorators/check-project.decorator';
 import { SubjectType } from './subject-type.enum';
-import { CHECK_USER_KEY } from './decorators/check-user.decorator';
-import { ALLOWED_SUBJECT_TYPES_KEY } from './decorators/allowed-subject-types.decorator';
+import { CHECK_SUBJECT_TYPE_KEY } from './decorators/check-subject-type.decorator';
+import { CHECK_USER_KEY } from './decorators/check-user.decorator.ts';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -52,12 +52,11 @@ export class AuthGuard implements CanActivate {
     }
 
     const accessToken: AccessToken = await this.authService.getAccessTokenBySecret(secret)
-    console.log(accessToken)
     if (!accessToken) throw new NotFoundException("Could not find AccessToken")
 
     if (accessToken.expiresAt.getTime() < Date.now()) throw new ForbiddenException("AccessToken expired")
 
-    if (!accessToken.scopes.includes(scope)) {
+    if (!accessToken.scopes.includes(scope) && !accessToken.scopes.includes(scope+ ":foreign")) {
       throw new ForbiddenException("Insufficient permissions")
     }
 
@@ -65,7 +64,7 @@ export class AuthGuard implements CanActivate {
       throw new InternalServerErrorException("AccessToken has no type")
     }
 
-    const allowedSubjectTypes = this.reflector.getAllAndOverride<SubjectType[]>(ALLOWED_SUBJECT_TYPES_KEY, [
+    const allowedSubjectTypes = this.reflector.getAllAndOverride<SubjectType[]>(CHECK_SUBJECT_TYPE_KEY, [
       context.getHandler(),
       context.getClass(),
     ])
@@ -82,8 +81,8 @@ export class AuthGuard implements CanActivate {
     ])
 
     if (checkProject) {
-      const requestedProjectId = request.body.project
-      if (!requestedProjectId) {
+      const projectId = request.params["projectId"]
+      if (!projectId) {
         throw new BadRequestException("You need to define a project")
       }
       switch (accessToken.type) {
@@ -91,19 +90,16 @@ export class AuthGuard implements CanActivate {
           if (!accessToken.project) {
             throw new InternalServerErrorException("AccessToken has no project defined")
           }
-          if (accessToken.project.externalId !== requestedProjectId) {
+          if (accessToken.project.externalId !== projectId) {
             throw new ForbiddenException("Requesting changes to a project with mismatching AccessToken")
           }
           break
         case SubjectType.USER:
-          if (!accessToken.user.projects?.some(project => project.externalId === requestedProjectId) || !accessToken.scopes.includes("projects:access")) {
-            throw new ForbiddenException("User does not have a project with the requested projectId or not enough permissions")
+          if (!accessToken.user.projects?.some(project => project.externalId === projectId) && !accessToken.scopes.includes(scope + ":foreign")) {
+            throw new ForbiddenException("User can only modify projects of themselves or with scope of type ...:foreign")
           }
           break
         case SubjectType.SERVICE:
-          if (accessToken.scopes.includes("projects:access")) {
-            throw new ForbiddenException("AccessToken of type service requires projects:access to use this resource")
-          }
           break
         default:
           throw new InternalServerErrorException("Not implemented")
@@ -116,19 +112,20 @@ export class AuthGuard implements CanActivate {
     ])
 
     if (checkUser) {
-      const userId = request.body.user
+      const userId = request.params["userId"]
       if (!userId) {
         throw new BadRequestException("You need to define a user")
       }
       switch (accessToken.type) {
         case SubjectType.MACHINE:
-          throw new ForbiddenException("You need an AccessToken of type service or user to access this resource")
+          throw new ForbiddenException("AccessToken of type machine cannot access this endpoint")
+          break
         case SubjectType.USER:
           if (!accessToken.user) {
             throw new InternalServerErrorException("AccessToken of type user has no user defined")
           }
-          if (accessToken.user !== userId || !accessToken.scopes.includes("users:foreign")) {
-            throw new ForbiddenException("AccessToken of type user can only access matching user of requires scope users:foreign")
+          if (accessToken.user.externalId !== userId && !accessToken.scopes.includes(scope + ":foreign")) {
+            throw new ForbiddenException("User can only modify themselves or with scope of type ...:foreign")
           }
           break
         case SubjectType.SERVICE:

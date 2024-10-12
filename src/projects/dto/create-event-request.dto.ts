@@ -1,6 +1,6 @@
 import { Expose, Transform } from "class-transformer";
 import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsPositive, IsString, Length, Matches } from "class-validator"
-import { Column } from "typeorm";
+import { Column } from "typeorm"
 import { Severity } from "../severity.enum";
 
 export class CreateEventRequestDTO {
@@ -23,11 +23,6 @@ export class CreateEventRequestDTO {
     @IsString()
     @Length(2, 64)
     device: string
-
-    @IsNotEmpty()
-    @IsString()
-    @Length(2, 64)
-    project: string
 
     @IsNotEmpty()
     @IsNumber()

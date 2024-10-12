@@ -5,10 +5,5 @@ export class CreateProjectRequestDTO {
     @IsString()
     @Length(2, 64)
     name: string
-
-    @IsNotEmpty()
-    @IsString()
-    @Length(2, 64)
-    user: string
     
 }

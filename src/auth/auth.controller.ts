@@ -7,7 +7,6 @@ import { CreateClientCredentialsRequestDTO } from './dto/create-client-credentia
 import { CreateClientCredentialsResponseDTO } from './dto/create-client-credentials-response.dto';
 import { CheckScope } from './decorators/check-scope.decorator';
 import { Request } from 'express';
-import { AllowedSubjectTypes } from './decorators/allowed-subject-types.decorator';
 import { SubjectType } from './subject-type.enum';
 
 @Controller("auth")
@@ -21,11 +20,12 @@ export class AuthController {
     return await this.authService.createAccessToken(dto)
   }
 
-  @CheckScope("clientcredentials:create")
-  @AllowedSubjectTypes(SubjectType.USER, SubjectType.SERVICE)
+  @CheckScope("credentials:create:service")
   @Post("credentials")
-  async createClientCredentials(@Body() dto: CreateClientCredentialsRequestDTO, @Req() request: Request): Promise<CreateClientCredentialsResponseDTO> {
-    return await this.authService.createClientCredentials(dto, request)
+  async createClientCredentials(@Body() dto: CreateClientCredentialsRequestDTO): Promise<CreateClientCredentialsResponseDTO> {
+    return await this.authService.createClientCredentials(dto, {
+      type: SubjectType.SERVICE
+    })
   }
  
 }

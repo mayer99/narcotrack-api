@@ -23,7 +23,7 @@ export class CreateAccessTokenRequestDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Length(2, 250)
+  @Length(2, 500)
   @Matches(/^[a-zA-Z0-9: ]+$/, { message: 'scope can only contain letters, numbers, spaces and colons' })
   scope: string
 

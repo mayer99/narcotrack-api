@@ -1,5 +1,6 @@
 import { Severity } from "../severity.enum"
 
+
 export class ReadEventsResponseDTO {
     events: {
         id: string
@@ -8,6 +9,8 @@ export class ReadEventsResponseDTO {
         severity: Severity
         device: string
         project: string
+        access_token: string
+        client_credentials: string
         createdAt: number
         receivedAt: number
     }[]

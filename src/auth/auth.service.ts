@@ -12,6 +12,7 @@ import { CreateClientCredentialsResponseDTO } from './dto/create-client-credenti
 import { User } from 'src/users/entities/user.entity'
 import { Request } from 'express'
 import { SubjectType } from './subject-type.enum'
+import { SubjectInfoDTO } from './dto/subject-type-info.dto'
 
 @Injectable()
 export class AuthService {
@@ -81,119 +82,71 @@ export class AuthService {
                 project: true,
                 user: {
                     projects: true
-                }
+                },
+                clientCredentials: true
             }
         })
     }
 
-    async createClientCredentials(dto: CreateClientCredentialsRequestDTO, request: Request): Promise<CreateClientCredentialsResponseDTO> {
+    async createClientCredentials(dto: CreateClientCredentialsRequestDTO, subjectInfo: SubjectInfoDTO): Promise<CreateClientCredentialsResponseDTO> {
 
-        const { name, description, type } = dto
-        const projectId = dto.project
-        const userId = dto.user
+        const { name, description } = dto
         const scopes = dto.scope.replace(/\s+/g, ' ').split(" ")
-
-        const accessToken: AccessToken = request["accessToken"]
-
-        if (!accessToken) {
-            throw new InternalServerErrorException("Could not load accessToken")
-        }
-
-        if (!scopes.every(scope => accessToken.scopes.includes(scope))) {
-            throw new ForbiddenException("You're trying to set scopes that you do not already have")
-        }
+        const { type, userId, projectId } = subjectInfo
 
         const externalId: string = randomBytes(32).toString('hex')
-        if (await this.clientCredentialsRepo.exists({ where: { externalId } })) return await this.createClientCredentials(dto, request)
+        if (await this.clientCredentialsRepo.exists({ where: { externalId } })) return await this.createClientCredentials(dto, subjectInfo)
 
         const clientId: string = randomBytes(32).toString('hex')
-        if (await this.clientCredentialsRepo.exists({ where: { clientId } })) return await this.createClientCredentials(dto, request)
+        if (await this.clientCredentialsRepo.exists({ where: { clientId } })) return await this.createClientCredentials(dto, subjectInfo)
 
         const clientSecret: string = randomBytes(32).toString('hex')
         const hashedClientSecret = createHash('sha256').update(clientSecret).digest().toString('hex')
 
-        if (!accessToken.type) {
-            throw new InternalServerErrorException("AccessToken has no type")
+        let credentials: Partial<ClientCredentials> = {
+            externalId,
+            clientId,
+            hashedClientSecret,
+            scopes,
+            name,
+            description,
+            type
         }
-
-        let project: Project
-        let user: User
 
         switch (type) {
             case SubjectType.MACHINE:
                 if (!projectId) {
-                    throw new BadRequestException("You have to define a project to create ClientCredentials of type machine")
+                    throw new InternalServerErrorException("Did not receive projectId with SubjectInfoDTO of type machine")
                 }
-                switch (accessToken.type) {
-                    case SubjectType.USER:
-                        if (!accessToken.user) {
-                            throw new InternalServerErrorException("AccessToken of type user has no user defined")
-                        }
-                        if (!accessToken.user.projects?.some(project => project.externalId === projectId) && !accessToken.scopes.includes("users:foreign")) {
-                            throw new ForbiddenException("Users can only create ClientCredentials for their own projects or with scope users:foreign")
-                        }
-                        break
-                    case SubjectType.SERVICE:
-                        break
-                    default:
-                        throw new InternalServerErrorException("Not implemented")
-                }
-                project = await this.projectsRepo.findOneBy({ externalId: projectId })
+                const project = await this.projectsRepo.findOne({ where: { externalId: projectId } });
                 if (!project) {
-                    throw new NotFoundException("Could not find project")
+                    throw new NotFoundException("Project not found");
                 }
+                credentials.project = project
                 break
             case SubjectType.USER:
                 if (!userId) {
-                    throw new BadRequestException("You have to define user to create ClientCredentials of type user")
+                    throw new InternalServerErrorException("Did not receive userId with SubjectInfoDTO of type user")
                 }
-                switch (accessToken.type) {
-                    case SubjectType.USER:
-                        if (!accessToken.user) {
-                            throw new InternalServerErrorException("AccessToken of type user has no user defined")
-                        }
-                        if (accessToken.user.externalId !== userId && !accessToken.scopes.includes("users:foreign")) {
-                            throw new ForbiddenException("Users can only create ClientCredentials of type user for themselves or with scope users:foreign")
-                        }
-                        break
-                    case SubjectType.SERVICE:
-                        break
-                    default:
-                        throw new InternalServerErrorException("Not implemented")
-                }
-                user = await this.usersRepo.findOneBy({ externalId: userId })
+                const user = await this.usersRepo.findOne({ where: { externalId: userId } });
                 if (!user) {
-                    throw new NotFoundException("Could not find user")
+                    throw new NotFoundException("User not found");
                 }
+                credentials.user = user
                 break
             case SubjectType.SERVICE:
-                if (!accessToken.scopes.includes("createservicetoken")) {
-                    throw new ForbiddenException("AccessToken with scope createservicetoken is neccessary to create ClientCredentials of type service")
-                }
                 break
             default:
                 throw new InternalServerErrorException("Not implemented")
         }
 
-        await this.clientCredentialsRepo.save({
-            externalId,
-            name,
-            description,
-            clientId,
-            hashedClientSecret,
-            scopes,
-            project,
-            user
-        })
-        const result: CreateClientCredentialsResponseDTO = {
+        await this.clientCredentialsRepo.save(credentials)
+
+        return {
             client_id: clientId,
             client_secret: clientSecret,
-            scope: scopes.join(" "),
-            type
+            scope: scopes.join(" ")
         }
-        if (project) result.project = project.externalId
-        if (user) result.user = user.externalId
-        return result
     }
 
     getHello(): string {
