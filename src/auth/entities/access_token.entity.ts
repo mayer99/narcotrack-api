@@ -2,7 +2,7 @@ import { Project } from 'src/projects/entities/project.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { ClientCredentials } from './client_credentials.entity';
 import { User } from 'src/users/entities/user.entity';
-import { SubjectType } from '../subject-type.enum';
+import { ClientType } from '../client-type.enum';
 
 @Entity("access_tokens", { schema: "auth" })
 export class AccessToken {
@@ -15,10 +15,10 @@ export class AccessToken {
 
     @Column({
         type: 'enum',
-        enum: SubjectType,
+        enum: ClientType,
         nullable: true
     })
-    type: SubjectType
+    type: ClientType
 
     @Column({ unique: true, name: "hashed_secret" })
     hashedSecret: string

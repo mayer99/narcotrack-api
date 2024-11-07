@@ -31,9 +31,6 @@ export class Event {
     @ManyToOne(() => Project, { onDelete: "CASCADE" })
     project: Project
 
-    @ManyToOne(() => AccessToken)
-    accessToken: AccessToken
-
     @ManyToOne(() => ClientCredentials)
     clientCredentials: ClientCredentials
 

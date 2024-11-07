@@ -1,12 +1,12 @@
 import { IsString, IsNotEmpty, Length, Matches, IsOptional, IsEnum } from 'class-validator'
-import { SubjectType } from '../subject-type.enum'
+import { ClientType } from '../client-type.enum'
 
 export class CreateClientCredentialsRequestDTO {
 
   @IsString()
   @IsNotEmpty()
   @Length(2, 100)
-  @Matches(/^[a-zA-Z0-9]+$/, { message: 'name can only contain letters and numbers' })
+  @Matches(/^[a-zA-Z0-9 ]+$/, { message: 'name can only contain letters, numbers and spaces' })
   name: string
 
   @IsOptional()

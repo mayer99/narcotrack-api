@@ -35,7 +35,9 @@ export class ProjectsService {
     let { messages, severity, device } = dto
 
     const project = await this.projectsRepo.findOneBy({ externalId: projectId })
-    if (!project) throw new NotFoundException("Could not find project with this id")
+    if (!project) {
+      throw new NotFoundException("Could not find project")
+    }
 
     const accessToken: AccessToken = request["accessToken"]
     if (!accessToken) {
@@ -51,7 +53,6 @@ export class ProjectsService {
       severity,
       device,
       project,
-      accessToken,
       clientCredentials: accessToken.clientCredentials,
       createdAt: new Date(dto.created_at)
     })
@@ -68,24 +69,22 @@ export class ProjectsService {
       },
       relations: {
         logs: {
-          accessToken: true,
           clientCredentials: true
         }
       }
     })
-    if (!project) throw new NotFoundException("Could not find project with this id")
+    if (!project) throw new NotFoundException("Could not find project")
 
     if (!project.logs || project.logs.length === 0) throw new NotFoundException("Could not find any logs")
     return {
       logs: project.logs.map(log => {
-        const { externalId, messages, severity, device, clientCredentials, accessToken, createdAt, receivedAt } = log
+        const { externalId, messages, severity, device, clientCredentials, createdAt, receivedAt } = log
         return {
           id: externalId,
           messages,
           severity,
           device,
           project: projectId,
-          access_token: accessToken?.externalId,
           client_credentials: clientCredentials?.externalId,
           createdAt: createdAt.getTime(),
           receivedAt: receivedAt.getTime()
@@ -99,7 +98,7 @@ export class ProjectsService {
     const { message, type, severity, device } = dto
 
     const project = await this.projectsRepo.findOneBy({ externalId: projectId })
-    if (!project) throw new NotFoundException("Could not find project with this id")
+    if (!project) throw new NotFoundException("Could not find project")
 
     const accessToken: AccessToken = request["accessToken"]
     if (!accessToken) {
@@ -116,7 +115,6 @@ export class ProjectsService {
       severity,
       device,
       project,
-      accessToken,
       clientCredentials: accessToken.clientCredentials,
       createdAt: new Date(dto.created_at)
     })
@@ -133,7 +131,6 @@ export class ProjectsService {
       },
       relations: {
         events: {
-          accessToken: true,
           clientCredentials: true
         }
       }
@@ -143,7 +140,7 @@ export class ProjectsService {
     if (!project.events || project.events.length === 0) throw new NotFoundException("Could not find events")
     return {
       events: project.events.map(event => {
-        const { externalId, message, type, severity, device, accessToken, clientCredentials, createdAt, receivedAt } = event
+        const { externalId, message, type, severity, device, clientCredentials, createdAt, receivedAt } = event
         return {
           id: externalId,
           message,
@@ -151,7 +148,6 @@ export class ProjectsService {
           severity,
           device,
           project: projectId,
-          access_token: accessToken?.externalId,
           client_credentials: clientCredentials?.externalId,
           createdAt: createdAt.getTime(),
           receivedAt: receivedAt.getTime()
@@ -172,12 +168,12 @@ export class ProjectsService {
         }
       }
     })
-    if (!project) throw new NotFoundException("Could not find project with this id")
+    if (!project) throw new NotFoundException("Could not find project")
 
     if (!project.clientCredentials || project.clientCredentials.length === 0) throw new NotFoundException("Could not find any ClientCredentials")
 
     return {
-      clientcredentials: project.clientCredentials.map(cc => {
+      client_credentials: project.clientCredentials.map(cc => {
         const { externalId, clientId, scopes, name, description, accessTokens, issuedAt } = cc
         return {
           id: externalId,

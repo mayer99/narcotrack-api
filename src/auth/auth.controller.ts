@@ -7,7 +7,7 @@ import { CreateClientCredentialsRequestDTO } from './dto/create-client-credentia
 import { CreateClientCredentialsResponseDTO } from './dto/create-client-credentials-response.dto';
 import { CheckScope } from './decorators/check-scope.decorator';
 import { Request } from 'express';
-import { SubjectType } from './subject-type.enum';
+import { ClientType } from './client-type.enum';
 
 @Controller("auth")
 export class AuthController {
@@ -23,9 +23,7 @@ export class AuthController {
   @CheckScope("credentials:create:service")
   @Post("credentials")
   async createClientCredentials(@Body() dto: CreateClientCredentialsRequestDTO): Promise<CreateClientCredentialsResponseDTO> {
-    return await this.authService.createClientCredentials(dto, {
-      type: SubjectType.SERVICE
-    })
+    return await this.authService.createServiceCredentials(dto)
   }
  
 }

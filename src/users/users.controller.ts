@@ -4,10 +4,9 @@ import { CreateUserRequestDTO } from './dto/create-user-request.dto';
 import { CreateUserResponseDTO } from './dto/create-user-response.dto';
 import { ReadUsersResponseDTO } from './dto/read-users-response.dto';
 import { ReadUsersRequestDTO } from './dto/read-users-request.dto';
-import { IsPublic } from 'src/auth/decorators/public.decorator';
 import { CheckScope } from 'src/auth/decorators/check-scope.decorator';
 import { Request } from 'express';
-import { SubjectType } from 'src/auth/subject-type.enum';
+import { ClientType } from 'src/auth/client-type.enum';
 import { CreateProjectRequestDTO } from './dto/create-project-request.dto';
 import { CreateProjectResponseDTO } from './dto/create-project-response.dto';
 import { ReadProjectsResponseDTO } from './dto/read-projects-response.dto';
@@ -17,8 +16,6 @@ import { CreateClientCredentialsResponseDTO } from 'src/auth/dto/create-client-c
 import { AuthService } from 'src/auth/auth.service';
 import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto';
 import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto';
-import { CheckSubjectType } from 'src/auth/decorators/check-subject-type.decorator';
-import { CheckProject } from 'src/auth/decorators/check-project.decorator';
 import { CheckUser } from 'src/auth/decorators/check-user.decorator.ts';
 
 @Controller('users')
@@ -31,7 +28,6 @@ export class UsersController {
   @CheckScope("users:read")
   @Get()
   async readUsers(@Body() dto: ReadUsersRequestDTO, @Req() request: Request): Promise<ReadUsersResponseDTO> {
-    console.log("######")
     return await this.usersService.getUsers(dto)
   }
 
@@ -68,10 +64,7 @@ export class UsersController {
     @Param('userId') userId: string,
     @Body() dto: CreateClientCredentialsRequestDTO,
   ): Promise<CreateClientCredentialsResponseDTO> {
-    return await this.authService.createClientCredentials(dto, {
-      type: SubjectType.USER,
-      userId
-    })
+    return await this.authService.createUserCredentials(dto, userId)
   }
 
   @CheckScope("users:credentials:read")

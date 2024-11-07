@@ -1,6 +1,6 @@
 
 export class GetClientCredentialsResponseDTO {
-  clientcredentials: {
+  client_credentials: {
     id: string
     client_id: string
     scope: string

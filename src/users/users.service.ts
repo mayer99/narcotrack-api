@@ -29,7 +29,9 @@ export class UsersService {
     const { name } = dto
 
     const user = await this.usersRepo.findOneBy({ externalId: userId })
-    if (!user) throw new NotFoundException("Could not find user with this id")
+    if (!user) {
+      throw new NotFoundException("Could not find user")
+    }
 
     const externalId: string = randomBytes(32).toString('hex')
     if (await this.projectsRepo.exists({ where: { externalId } })) return await this.createProject(userId, dto)
@@ -42,8 +44,7 @@ export class UsersService {
 
     return {
       id: externalId,
-      name,
-      created_at: project.createdAt.getTime()
+      name
     }
   }
 
@@ -57,11 +58,12 @@ export class UsersService {
         projects: true
       }
     })
-    if (!user) throw new NotFoundException("Could not find user with this id")
+    if (!user) {
+      throw new NotFoundException("Could not find user")
+    }
 
     if (!user.projects || user.projects.length === 0) throw new NotFoundException("Could not find any projects")
 
-      console.log("test")
     return {
       projects: user.projects.map(project => {
         const { externalId, name, createdAt, updatedAt } = project
@@ -88,13 +90,15 @@ export class UsersService {
         }
       }
     })
-    if (!user) throw new NotFoundException("Could not find user with this id")
+    if (!user) {
+      throw new NotFoundException("Could not find user")
+    }
 
     if (!user.clientCredentials || user.clientCredentials.length === 0) throw new NotFoundException("Could not find any ClientCredentials")
 
     return {
-      clientcredentials: user.clientCredentials.map(cc => {
-        const { externalId, clientId, scopes, name, description, accessTokens, user, issuedAt } = cc
+      client_credentials: user.clientCredentials.map(clientCredentials => {
+        const { externalId, clientId, scopes, name, description, accessTokens, user, issuedAt } = clientCredentials
         return {
           id: externalId,
           client_id: clientId,
@@ -122,7 +126,6 @@ export class UsersService {
     return {
       id: externalId,
       name,
-      created_at: user.createdAt.getTime()
     }
   }
 

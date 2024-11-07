@@ -13,7 +13,7 @@ import { CreateClientCredentialsResponseDTO } from 'src/auth/dto/create-client-c
 import { CreateLogRequestDTO } from './dto/create-log-request.dto'
 import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto'
 import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto'
-import { SubjectType } from 'src/auth/subject-type.enum'
+import { ClientType } from 'src/auth/client-type.enum'
 import { CheckScope } from 'src/auth/decorators/check-scope.decorator'
 import { CheckProject } from 'src/auth/decorators/check-project.decorator'
 import { Request } from 'express'
@@ -25,7 +25,7 @@ export class ProjectsController {
     private readonly authService: AuthService
   ) {}
 
-  @CheckScope("projects:logs:create")
+  @CheckScope("logs:create")
   @CheckProject()
   @Post(':projectId/logs')
   async createLog(
@@ -36,7 +36,7 @@ export class ProjectsController {
     return await this.projectsService.createLog(projectId, dto, req)
   }
 
-  @CheckScope("projects:logs:read")
+  @CheckScope("logs:read")
   @CheckProject()
   @Get(':projectId/logs')
   async getLogs(
@@ -46,7 +46,7 @@ export class ProjectsController {
     return await this.projectsService.getLogs(projectId, dto);
   }
 
-  @CheckScope("projects:events:create")
+  @CheckScope("events:create")
   @CheckProject()
   @Post(':projectId/events')
   async createEvent(
@@ -57,7 +57,7 @@ export class ProjectsController {
     return await this.projectsService.createEvent(projectId, dto, req)
   }
 
-  @CheckScope("projects:events:read")
+  @CheckScope("events:read")
   @CheckProject()
   @Get(':projectId/events')
   async getEvents(
@@ -74,10 +74,7 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
     @Body() dto: CreateClientCredentialsRequestDTO,
   ): Promise<CreateClientCredentialsResponseDTO> {
-    return await this.authService.createClientCredentials(dto, {
-      type: SubjectType.MACHINE,
-      projectId
-    })
+    return await this.authService.createMachineCredentials(dto, projectId)
   }
 
   @CheckScope("projects:credentials:read")

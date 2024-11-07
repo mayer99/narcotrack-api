@@ -7,9 +7,7 @@ export class LogMiddleware implements NestMiddleware {
     const endpoint = req.originalUrl
     const body = req.body
 
-    console.log(`Endpoint: ${endpoint}`)
-    console.log(`Body: ${JSON.stringify(body)}`)
-    
+    console.log(`New Request from ${req.ip} requesting ${endpoint}`)
     next()
   }
 }

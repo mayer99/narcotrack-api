@@ -10,9 +10,7 @@ import { CreateAccessTokenResponseDTO } from './dto/create-access-token-response
 import { CreateClientCredentialsRequestDTO } from './dto/create-client-credentials-request.dto'
 import { CreateClientCredentialsResponseDTO } from './dto/create-client-credentials-response.dto'
 import { User } from 'src/users/entities/user.entity'
-import { Request } from 'express'
-import { SubjectType } from './subject-type.enum'
-import { SubjectInfoDTO } from './dto/subject-type-info.dto'
+import { ClientType } from './client-type.enum'
 
 @Injectable()
 export class AuthService {
@@ -34,7 +32,7 @@ export class AuthService {
         const grantType = dto.grant_type
         const scopes = dto.scope.replace(/\s+/g, ' ').split(" ")
 
-        if (grantType !== "client_credentials") throw new BadRequestException("This endpoint only supports client_credentials")
+        if (grantType !== "client_credentials") throw new BadRequestException("This endpoint only supports grant_type: client_credentials")
 
         const clientCredentials = await this.clientCredentialsRepo.findOneBy({ clientId })
         if (!clientCredentials) throw new NotFoundException("Invalid client_id")
@@ -88,64 +86,80 @@ export class AuthService {
         })
     }
 
-    async createClientCredentials(dto: CreateClientCredentialsRequestDTO, subjectInfo: SubjectInfoDTO): Promise<CreateClientCredentialsResponseDTO> {
+    private async createPartialClientCredentials(dto: CreateClientCredentialsRequestDTO): Promise<{ clientCredentials: Partial<ClientCredentials>, clientSecret: string }> {
 
-        const { name, description } = dto
-        const scopes = dto.scope.replace(/\s+/g, ' ').split(" ")
-        const { type, userId, projectId } = subjectInfo
+        const { name, description, scope } = dto
 
         const externalId: string = randomBytes(32).toString('hex')
-        if (await this.clientCredentialsRepo.exists({ where: { externalId } })) return await this.createClientCredentials(dto, subjectInfo)
+        if (await this.clientCredentialsRepo.exists({ where: { externalId } })) return await this.createPartialClientCredentials(dto)
 
         const clientId: string = randomBytes(32).toString('hex')
-        if (await this.clientCredentialsRepo.exists({ where: { clientId } })) return await this.createClientCredentials(dto, subjectInfo)
+        if (await this.clientCredentialsRepo.exists({ where: { clientId } })) return await this.createPartialClientCredentials(dto)
 
         const clientSecret: string = randomBytes(32).toString('hex')
         const hashedClientSecret = createHash('sha256').update(clientSecret).digest().toString('hex')
 
-        let credentials: Partial<ClientCredentials> = {
-            externalId,
-            clientId,
-            hashedClientSecret,
-            scopes,
-            name,
-            description,
-            type
-        }
-
-        switch (type) {
-            case SubjectType.MACHINE:
-                if (!projectId) {
-                    throw new InternalServerErrorException("Did not receive projectId with SubjectInfoDTO of type machine")
-                }
-                const project = await this.projectsRepo.findOne({ where: { externalId: projectId } });
-                if (!project) {
-                    throw new NotFoundException("Project not found");
-                }
-                credentials.project = project
-                break
-            case SubjectType.USER:
-                if (!userId) {
-                    throw new InternalServerErrorException("Did not receive userId with SubjectInfoDTO of type user")
-                }
-                const user = await this.usersRepo.findOne({ where: { externalId: userId } });
-                if (!user) {
-                    throw new NotFoundException("User not found");
-                }
-                credentials.user = user
-                break
-            case SubjectType.SERVICE:
-                break
-            default:
-                throw new InternalServerErrorException("Not implemented")
-        }
-
-        await this.clientCredentialsRepo.save(credentials)
+        const scopes = scope.replace(/\s+/g, ' ').split(" ")
 
         return {
-            client_id: clientId,
+            clientCredentials: {
+                externalId,
+                clientId,
+                hashedClientSecret,
+                scopes,
+                name,
+                description
+            },
+            clientSecret
+        }
+    }
+
+    async createMachineCredentials(dto: CreateClientCredentialsRequestDTO, projectId: string): Promise<CreateClientCredentialsResponseDTO> {
+        if (!projectId) {
+            throw new BadRequestException("No project defined")
+        }
+        const project = await this.projectsRepo.findOne({ where: { externalId: projectId } });
+        if (!project) {
+            throw new NotFoundException("Project not found");
+        }
+        let { clientCredentials, clientSecret } = await this.createPartialClientCredentials(dto)
+        clientCredentials.project = project
+        clientCredentials.type = ClientType.MACHINE
+        await this.clientCredentialsRepo.save(clientCredentials)
+        return {
+            client_id: clientCredentials.clientId,
             client_secret: clientSecret,
-            scope: scopes.join(" ")
+            scope: clientCredentials.scopes.join(" ")
+        }
+    }
+
+    async createUserCredentials(dto: CreateClientCredentialsRequestDTO, userId: string): Promise<CreateClientCredentialsResponseDTO> {
+        if (!userId) {
+            throw new BadRequestException("No user defined")
+        }
+        const user = await this.usersRepo.findOne({ where: { externalId: userId } });
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+        let { clientCredentials, clientSecret } = await this.createPartialClientCredentials(dto)
+        clientCredentials.user = user
+        clientCredentials.type = ClientType.USER
+        await this.clientCredentialsRepo.save(clientCredentials)
+        return {
+            client_id: clientCredentials.clientId,
+            client_secret: clientSecret,
+            scope: clientCredentials.scopes.join(" ")
+        }
+    }
+
+    async createServiceCredentials(dto: CreateClientCredentialsRequestDTO): Promise<CreateClientCredentialsResponseDTO> {
+        let { clientCredentials, clientSecret } = await this.createPartialClientCredentials(dto)
+        clientCredentials.type = ClientType.SERVICE
+        await this.clientCredentialsRepo.save(clientCredentials)
+        return {
+            client_id: clientCredentials.clientId,
+            client_secret: clientSecret,
+            scope: clientCredentials.scopes.join(" ")
         }
     }
 

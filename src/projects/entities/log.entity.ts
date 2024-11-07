@@ -28,9 +28,6 @@ export class Log {
     @ManyToOne(() => Project)
     project: Project
 
-    @ManyToOne(() => AccessToken)
-    accessToken: AccessToken
-
     @ManyToOne(() => ClientCredentials)
     clientCredentials: ClientCredentials
 
