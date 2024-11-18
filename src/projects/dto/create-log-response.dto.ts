@@ -1,3 +1,3 @@
 export class CreateLogResponseDTO {
-    message: string
+    message?: string
 }

@@ -163,9 +163,7 @@ export class ProjectsService {
         externalId: projectId
       },
       relations: {
-        clientCredentials: {
-          accessTokens: true
-        }
+        clientCredentials: true
       }
     })
     if (!project) throw new NotFoundException("Could not find project")
@@ -173,15 +171,14 @@ export class ProjectsService {
     if (!project.clientCredentials || project.clientCredentials.length === 0) throw new NotFoundException("Could not find any ClientCredentials")
 
     return {
-      client_credentials: project.clientCredentials.map(cc => {
-        const { externalId, clientId, scopes, name, description, accessTokens, issuedAt } = cc
+      client_credentials: project.clientCredentials.map(clientCredentials => {
+        const { externalId, clientId, scopes, name, description, issuedAt } = clientCredentials
         return {
           id: externalId,
           client_id: clientId,
           scope: scopes.join(" "),
           name,
           description,
-          access_tokens: accessTokens.map(accessToken => accessToken.externalId),
           issued_at: issuedAt.getTime()
         }
       })

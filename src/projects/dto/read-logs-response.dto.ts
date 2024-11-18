@@ -1,6 +1,7 @@
 import { Severity } from "../severity.enum"
 
 export class ReadLogsResponseDTO {
+    message?: string
     logs: {
         id: string
         messages: string[]

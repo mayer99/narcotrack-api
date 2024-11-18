@@ -32,7 +32,7 @@ export class AuthService {
         const grantType = dto.grant_type
         const scopes = dto.scope.replace(/\s+/g, ' ').split(" ")
 
-        if (grantType !== "client_credentials") throw new BadRequestException("This endpoint only supports grant_type: client_credentials")
+        if (grantType !== "client_credentials") throw new BadRequestException("This endpoint only supports grant_type=client_credentials")
 
         const clientCredentials = await this.clientCredentialsRepo.findOneBy({ clientId })
         if (!clientCredentials) throw new NotFoundException("Invalid client_id")
@@ -51,8 +51,7 @@ export class AuthService {
         const hashedSecret = createHash('sha256').update(secret).digest().toString('hex')
         if (await this.accessTokenRepo.exists({ where: { hashedSecret } })) return await this.createAccessToken(dto)
 
-        const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + 1)
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
         await this.accessTokenRepo.save({
             externalId,

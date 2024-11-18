@@ -70,7 +70,6 @@ export class UsersService {
         return {
           id: externalId,
           name,
-          user: userId,
           created_at: createdAt.getTime(),
           updated_at: updatedAt.getTime()
         }
@@ -85,9 +84,7 @@ export class UsersService {
         externalId: userId
       },
       relations: {
-        clientCredentials: {
-          accessTokens: true
-        }
+        clientCredentials: true
       }
     })
     if (!user) {
@@ -98,14 +95,13 @@ export class UsersService {
 
     return {
       client_credentials: user.clientCredentials.map(clientCredentials => {
-        const { externalId, clientId, scopes, name, description, accessTokens, user, issuedAt } = clientCredentials
+        const { externalId, clientId, scopes, name, description, issuedAt } = clientCredentials
         return {
           id: externalId,
           client_id: clientId,
           scope: scopes.join(" "),
           name,
           description,
-          access_tokens: accessTokens.map(accessToken => accessToken.externalId),
           issued_at: issuedAt.getTime()
         }
       })
@@ -131,12 +127,7 @@ export class UsersService {
 
   async getUsers(dto: ReadUsersRequestDTO): Promise<ReadUsersResponseDTO> {
     const users = await this.usersRepo.find({
-      where: {},
-      relations: {
-        projects: true,
-        accessTokens: true,
-        clientCredentials: true
-      }
+      where: {}
     })
 
     if (!users || users.length === 0) throw new NotFoundException("Could not find any users")
@@ -146,9 +137,6 @@ export class UsersService {
         return {
           id: externalId,
           name,
-          projects: projects.map(project => project.externalId),
-          accessTokens: accessTokens.map(accessToken => accessToken.externalId),
-          clientCredentials: clientCredentials.map(cc => cc.externalId),
           created_at: createdAt.getTime(),
           updated_at: updatedAt.getTime()
         }

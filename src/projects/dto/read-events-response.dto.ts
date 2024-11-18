@@ -2,6 +2,7 @@ import { Severity } from "../severity.enum"
 
 
 export class ReadEventsResponseDTO {
+    message?: string
     events: {
         id: string
         message: string

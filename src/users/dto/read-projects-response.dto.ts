@@ -1,8 +1,8 @@
 export class ReadProjectsResponseDTO {
+    message?: string
     projects: {
         id: string
         name: string
-        user: string
         created_at: number
         updated_at: number
     }[]

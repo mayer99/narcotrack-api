@@ -1,0 +1,45 @@
+# Node.js modules
+node_modules/
+
+# Log-Dateien
+*.log
+
+# Umgebungsdateien
+.env
+
+# Git-Verzeichnisse
+.git/
+.gitignore
+
+# Docker-Dateien (außer Dockerfile, falls erforderlich)
+.dockerignore
+Dockerfile*
+
+# Build- und Distribution-Verzeichnisse (falls du sie nicht einbeziehst)
+dist/
+build/
+
+# NestJS Typings
+*.d.ts
+
+# Tests (falls du diese nicht in der Produktion benötigst)
+test/
+tests/
+
+# IDE und Editor-Verzeichnisse (z. B. für VSCode, WebStorm, etc.)
+.vscode/
+.idea/
+
+# NPM Cache
+.npm/
+
+# Yarn Cache (falls du Yarn benutzt)
+.yarn/
+
+# Andere temporäre Dateien
+*.tmp
+*.swp
+
+# Dateien von CI/CD-Tools (z.B. Jenkins, GitLab CI)
+.coverage/
+.nyc_output/

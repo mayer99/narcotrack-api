@@ -56,7 +56,7 @@ export class AuthGuard implements CanActivate {
 
     if (accessToken.expiresAt.getTime() < Date.now()) throw new ForbiddenException("AccessToken expired")
 
-    if (!accessToken.scopes.includes(scope) && !accessToken.scopes.includes(scope + ":foreign")) {
+    if (!accessToken.scopes.includes(scope)) {
       throw new ForbiddenException("Insufficient permissions")
     }
 
@@ -95,8 +95,8 @@ export class AuthGuard implements CanActivate {
           }
           break
         case ClientType.USER:
-          if (!accessToken.user.projects?.some(project => project.externalId === projectId) && !accessToken.scopes.includes(scope + ":foreign")) {
-            throw new ForbiddenException("User can only modify projects of themselves or with scope of type ...:foreign")
+          if (!accessToken.user.projects?.some(project => project.externalId === projectId)) {
+            throw new ForbiddenException("User can only modify projects of themselves")
           }
           break
         case ClientType.SERVICE:
@@ -123,8 +123,8 @@ export class AuthGuard implements CanActivate {
           if (!accessToken.user) {
             throw new InternalServerErrorException("AccessToken of type user has no user defined")
           }
-          if (accessToken.user.externalId !== userId && !accessToken.scopes.includes(scope + ":foreign")) {
-            throw new ForbiddenException("User can only modify themselves or with scope of type ...:foreign")
+          if (accessToken.user.externalId !== userId) {
+            throw new ForbiddenException("User can only modify themselves")
           }
           break
         case ClientType.SERVICE:
@@ -134,8 +134,6 @@ export class AuthGuard implements CanActivate {
       }
     }
     request["accessToken"] = accessToken
-    console.log("Passed AuthGuard")
-
     return true
   }
 }

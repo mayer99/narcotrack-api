@@ -1,3 +1,3 @@
 export class CreateEventResponseDTO {
-    message: string
+    message?: string
 }
