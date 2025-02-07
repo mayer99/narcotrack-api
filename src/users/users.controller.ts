@@ -6,17 +6,14 @@ import { ReadUsersResponseDTO } from './dto/read-users-response.dto';
 import { ReadUsersRequestDTO } from './dto/read-users-request.dto';
 import { CheckScope } from 'src/auth/decorators/check-scope.decorator';
 import { Request } from 'express';
-import { ClientType } from 'src/auth/client-type.enum';
 import { CreateProjectRequestDTO } from './dto/create-project-request.dto';
 import { CreateProjectResponseDTO } from './dto/create-project-response.dto';
 import { ReadProjectsResponseDTO } from './dto/read-projects-response.dto';
 import { ReadProjectsRequestDTO } from './dto/read-projects-request.dto';
-import { CreateClientCredentialsRequestDTO } from 'src/auth/dto/create-client-credentials-request.dto';
-import { CreateClientCredentialsResponseDTO } from 'src/auth/dto/create-client-credentials-response.dto';
 import { AuthService } from 'src/auth/auth.service';
-import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto';
-import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto';
 import { CheckUser } from 'src/auth/decorators/check-user.decorator.ts';
+import { AccessControl } from 'src/auth/decorators/access-control.decorator';
+import { AccessLevel } from 'src/auth/enum/access-level.enum';
 
 @Controller('users')
 export class UsersController {
@@ -27,17 +24,17 @@ export class UsersController {
 
   @CheckScope("users:read")
   @Get()
-  async readUsers(@Body() dto: ReadUsersRequestDTO, @Req() request: Request): Promise<ReadUsersResponseDTO> {
+  async readUsers(@Body() dto: ReadUsersRequestDTO): Promise<ReadUsersResponseDTO> {
     return await this.usersService.getUsers(dto)
   }
 
   @CheckScope("users:create")
   @Post()
-  async createUser(@Body() dto: CreateUserRequestDTO, @Req() request: Request): Promise<CreateUserResponseDTO> {
+  async createUser(@Body() dto: CreateUserRequestDTO): Promise<CreateUserResponseDTO> {
     return await this.usersService.createUser(dto)
   }
 
-  @CheckScope("users:projects:create")
+  @CheckScope("projects:create")
   @CheckUser()
   @Post(':userId/projects')
   async createProject(
@@ -47,7 +44,7 @@ export class UsersController {
     return await this.usersService.createProject(userId, dto)
   }
 
-  @CheckScope("users:projects:read")
+  @CheckScope("projects:read")
   @CheckUser()
   @Get(':userId/projects')
   async getProjects(
@@ -55,26 +52,6 @@ export class UsersController {
     @Body() dto: ReadProjectsRequestDTO
   ): Promise<ReadProjectsResponseDTO> {
     return await this.usersService.getProjects(userId, dto);
-  }
-
-  @CheckScope("users:credentials:create")
-  @CheckUser()
-  @Post(':userId/credentials')
-  async createClientCredentials(
-    @Param('userId') userId: string,
-    @Body() dto: CreateClientCredentialsRequestDTO,
-  ): Promise<CreateClientCredentialsResponseDTO> {
-    return await this.authService.createUserCredentials(dto, userId)
-  }
-
-  @CheckScope("users:credentials:read")
-  @CheckUser()
-  @Get(':userId/credentials')
-  async getClientCredentials(
-    @Param('userId') userId: string,
-    @Body() dto: GetClientCredentialsRequestDTO
-  ): Promise<GetClientCredentialsResponseDTO> {
-    return await this.usersService.getClientCredentials(userId, dto)
   }
 
   @Get("hello")

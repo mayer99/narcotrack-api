@@ -4,6 +4,7 @@ import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Log } from "./log.entity";
 import { Event } from "./event.entity";
+import { Device } from "./device.entity";
 
 
 @Entity("projects", { schema: "projects" })
@@ -21,11 +22,8 @@ export class Project {
     @ManyToOne(() => User, (user) => user.projects)
     user: User
 
-    @OneToMany(() => AccessToken, (accessToken) => accessToken.project)
-    accessTokens: AccessToken[]
-
-    @OneToMany(() => ClientCredentials, (clientCredentials) => clientCredentials.project)
-    clientCredentials: ClientCredentials[]
+    @OneToMany(() => Device, (device) => device.project)
+    devices: Device[]
 
     @OneToMany(() => Log, (log) => log.project)
     logs: Log[]

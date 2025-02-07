@@ -6,9 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectsModule } from './projects/projects.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { AuthGuard } from './auth/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import config from './config';
+import { AccessGuard } from './auth/access.guard';
 
 @Module({
   imports: [
@@ -39,7 +39,7 @@ import config from './config';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: AccessGuard,
     }
   ]
 })

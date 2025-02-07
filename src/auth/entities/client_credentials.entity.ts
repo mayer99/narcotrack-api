@@ -3,22 +3,13 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { AccessToken } from './access_token.entity';
 import { User } from 'src/users/entities/user.entity';
 import { ClientType } from '../client-type.enum';
+import { Device } from 'src/projects/entities/device.entity';
 
 @Entity("client_credentials", { schema: "auth" })
 export class ClientCredentials {
     
     @PrimaryGeneratedColumn()
     id: number
-
-    @Column({ unique: true, name: "external_id" })
-    externalId: string
-
-    @Column({
-        type: 'enum',
-        enum: ClientType,
-        nullable: true
-    })
-    type: ClientType
     
     @Column({ unique: true, name: "client_id" })
     clientId: string
@@ -26,8 +17,8 @@ export class ClientCredentials {
     @Column({ name: "hashed_client_secret"})
     hashedClientSecret: string
 
-    @Column("text", { array: true })
-    scopes: string[]
+    @Column("text")
+    scope: string
 
     @Column()
     name: string
@@ -35,16 +26,9 @@ export class ClientCredentials {
     @Column({ nullable: true })
     description?: string
 
-    @OneToMany(() => AccessToken, (accessToken) => accessToken.clientCredentials)
-    accessTokens: AccessToken[]
-
-    @ManyToOne(() => Project, (project) => project.clientCredentials, { onDelete: "CASCADE", nullable: true })
-    @JoinColumn({ name: "project_id" })
-    project?: Project
-
-    @ManyToOne(() => User, (user) => user.clientCredentials, { onDelete: "CASCADE", nullable: true })
-    @JoinColumn({ name: "user_id" })
-    user?: User
+    @ManyToOne(() => Device, (device) => device.clientCredentials, { onDelete: "CASCADE" })
+    @JoinColumn()
+    device: Device
 
     @CreateDateColumn({ type: "timestamptz", name: "issued_at" })
     issuedAt: Date

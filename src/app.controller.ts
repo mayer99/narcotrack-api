@@ -1,12 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { IsPublic } from './auth/decorators/public.decorator';
+import { AccessControl } from './auth/decorators/access-control.decorator';
+import { AccessLevel } from './auth/enum/access-level.enum';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @IsPublic()
+  @AccessControl(AccessLevel.PUBLIC)
   @Get()
   getHello(): string {
     return this.appService.getHello();

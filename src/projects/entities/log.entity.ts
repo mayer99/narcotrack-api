@@ -3,6 +3,7 @@ import { Project } from "src/projects/entities/project.entity";
 import { Severity } from "../severity.enum";
 import { AccessToken } from "src/auth/entities/access_token.entity";
 import { ClientCredentials } from "src/auth/entities/client_credentials.entity";
+import { Device } from "./device.entity";
 
 @Entity("logs", { schema: "projects" })
 export class Log {
@@ -13,8 +14,8 @@ export class Log {
     @Column({ unique: true })
     externalId: string
 
-    @Column("text", { array: true })
-    messages: string[]
+    @Column("text")
+    message: string
 
     @Column({
         type: 'enum',
@@ -22,19 +23,16 @@ export class Log {
     })
     severity: Severity
 
-    @Column()
-    device: string
+    @ManyToOne(() => Device, { onDelete: "CASCADE" })
+    device: Device
 
-    @ManyToOne(() => Project)
+    @ManyToOne(() => Project, { onDelete: "CASCADE" })
     project: Project
-
-    @ManyToOne(() => ClientCredentials)
-    clientCredentials: ClientCredentials
 
     @Column({ type: "timestamptz", name: "created_at" })
     createdAt: Date
 
     @CreateDateColumn({ type: "timestamptz", name: "received_at" })
     receivedAt: Date
-    
+
 }

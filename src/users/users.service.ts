@@ -26,6 +26,7 @@ export class UsersService {
   ) { }
 
   async createProject(userId: string, dto: CreateProjectRequestDTO): Promise<CreateProjectResponseDTO> {
+
     const { name } = dto
 
     const user = await this.usersRepo.findOneBy({ externalId: userId })
@@ -36,7 +37,7 @@ export class UsersService {
     const externalId: string = randomBytes(32).toString('hex')
     if (await this.projectsRepo.exists({ where: { externalId } })) return await this.createProject(userId, dto)
 
-    const project = await this.projectsRepo.save({
+    await this.projectsRepo.save({
       externalId,
       name,
       user
@@ -62,10 +63,10 @@ export class UsersService {
       throw new NotFoundException("Could not find user")
     }
 
-    if (!user.projects || user.projects.length === 0) throw new NotFoundException("Could not find any projects")
+    if (!user.projects || user.projects.length === 0) throw new NotFoundException("This user does not have any projects")
 
     return {
-      projects: user.projects.map(project => {
+      data: user.projects.map(project => {
         const { externalId, name, createdAt, updatedAt } = project
         return {
           id: externalId,
@@ -77,38 +78,8 @@ export class UsersService {
     }
   }
 
-  async getClientCredentials(userId: string, dto: GetClientCredentialsRequestDTO): Promise<GetClientCredentialsResponseDTO> {
-
-    const user = await this.usersRepo.findOne({
-      where: {
-        externalId: userId
-      },
-      relations: {
-        clientCredentials: true
-      }
-    })
-    if (!user) {
-      throw new NotFoundException("Could not find user")
-    }
-
-    if (!user.clientCredentials || user.clientCredentials.length === 0) throw new NotFoundException("Could not find any ClientCredentials")
-
-    return {
-      client_credentials: user.clientCredentials.map(clientCredentials => {
-        const { externalId, clientId, scopes, name, description, issuedAt } = clientCredentials
-        return {
-          id: externalId,
-          client_id: clientId,
-          scope: scopes.join(" "),
-          name,
-          description,
-          issued_at: issuedAt.getTime()
-        }
-      })
-    }
-  }
-
   async createUser(dto: CreateUserRequestDTO): Promise<CreateUserResponseDTO> {
+
     const { name } = dto
 
     const externalId: string = randomBytes(32).toString('hex')
@@ -121,22 +92,28 @@ export class UsersService {
 
     return {
       id: externalId,
-      name,
+      name
     }
   }
 
   async getUsers(dto: ReadUsersRequestDTO): Promise<ReadUsersResponseDTO> {
+
     const users = await this.usersRepo.find({
-      where: {}
+      where: {},
+      relations: {
+        projects: true
+      }
     })
 
     if (!users || users.length === 0) throw new NotFoundException("Could not find any users")
+
     return {
-      users: users.map(user => {
-        const { externalId, name, projects, accessTokens, clientCredentials, createdAt, updatedAt } = user
+      data: users.map(user => {
+        const { externalId, name, projects, createdAt, updatedAt } = user
         return {
           id: externalId,
           name,
+          projects: projects.map(project => project.externalId),
           created_at: createdAt.getTime(),
           updated_at: updatedAt.getTime()
         }

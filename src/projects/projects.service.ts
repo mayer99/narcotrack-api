@@ -17,6 +17,11 @@ import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credenti
 import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto';
 import { Request } from 'express';
 import { AccessToken } from 'src/auth/entities/access_token.entity';
+import { Device } from './entities/device.entity';
+import { CreateDeviceRequestDTO } from './dto/create-device-request.dto';
+import { CreateDeviceResponseDTO } from './dto/create-device-response.dto';
+import { ReadDevicesRequestDTO } from './dto/read-devices-request.dto';
+import { ReadDevicesResponseDTO } from './dto/read-devices-response.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -26,39 +31,119 @@ export class ProjectsService {
     private readonly logsRepo: Repository<Log>,
     @InjectRepository(Event)
     private readonly eventsRepo: Repository<Event>,
+    @InjectRepository(Device)
+    private readonly devicesRepo: Repository<Device>,
     @InjectRepository(Project)
     private readonly projectsRepo: Repository<Project>
   ) { }
 
-  async createLog(projectId: string, dto: CreateLogRequestDTO, request: Request): Promise<CreateLogResponseDTO> {
+  async createDevice(projectId: string, dto: CreateDeviceRequestDTO): Promise<CreateDeviceResponseDTO> {
 
-    let { messages, severity, device } = dto
+    let { name } = dto
 
     const project = await this.projectsRepo.findOneBy({ externalId: projectId })
     if (!project) {
       throw new NotFoundException("Could not find project")
     }
 
-    const accessToken: AccessToken = request["accessToken"]
-    if (!accessToken) {
-      throw new InternalServerErrorException("Could not find AccessToken")
-    }
-
     const externalId: string = randomBytes(32).toString('hex')
-    if (await this.logsRepo.exists({ where: { externalId } })) return await this.createLog(projectId, dto, request)
+    if (await this.devicesRepo.exists({ where: { externalId } })) return await this.createDevice(projectId, dto)
 
-    await this.logsRepo.save({
+    await this.devicesRepo.save({
       externalId,
-      messages,
-      severity,
-      device,
-      project,
-      clientCredentials: accessToken.clientCredentials,
-      createdAt: new Date(dto.created_at)
+      name
     })
 
     return {
-      message: `Log created`
+      id: externalId,
+      name,
+      project: projectId
+    }
+  }
+
+  async createLog(projectId: string, dto: CreateLogRequestDTO): Promise<CreateLogResponseDTO> {
+
+    const { message, severity } = dto
+    const deviceId = dto.device
+    const createdAt = dto.created_at
+
+    const project = await this.projectsRepo.findOneBy({ externalId: projectId })
+    if (!project) {
+      throw new NotFoundException("Could not find project")
+    }
+
+    const device = await this.devicesRepo.findOneBy({
+      externalId: deviceId,
+      project: {
+        id: project.id
+      }
+    })
+    if (!device) {
+      throw new NotFoundException("Could not find device as member of project")
+    }
+
+    const externalId: string = randomBytes(32).toString('hex')
+    if (await this.logsRepo.exists({ where: { externalId } })) return await this.createLog(projectId, dto)
+
+    await this.logsRepo.save({
+      externalId,
+      message,
+      severity,
+      device,
+      project,
+      createdAt: new Date(createdAt)
+    })
+
+    return {
+      id: externalId,
+      message,
+      severity,
+      device: deviceId,
+      project: projectId
+    }
+  }
+
+  async createEvent(projectId: string, dto: CreateEventRequestDTO): Promise<CreateEventResponseDTO> {
+
+    const { message, type, severity } = dto
+    const deviceId = dto.device
+    const createdAt = dto.created_at
+
+    const project = await this.projectsRepo.findOneBy({ externalId: projectId })
+    if (!project) {
+      throw new NotFoundException("Could not find project")
+    }
+
+    const device = await this.devicesRepo.findOneBy({
+      externalId: deviceId,
+      project: {
+        id: project.id
+      }
+    })
+    if (!device) {
+      throw new NotFoundException("Could not find device as member of project")
+    }
+
+    const externalId: string = randomBytes(32).toString('hex')
+    if (await this.eventsRepo.exists({ where: { externalId } })) return await this.createEvent(projectId, dto)
+
+    await this.eventsRepo.save({
+      externalId,
+      message,
+      type,
+      severity,
+      device,
+      project,
+      createdAt: new Date(createdAt)
+    })
+
+    return {
+      id: externalId,
+      message,
+      type,
+      severity,
+      device: deviceId,
+      project: projectId
     }
   }
 
@@ -69,23 +154,23 @@ export class ProjectsService {
       },
       relations: {
         logs: {
-          clientCredentials: true
+          device: true
         }
       }
     })
     if (!project) throw new NotFoundException("Could not find project")
 
     if (!project.logs || project.logs.length === 0) throw new NotFoundException("Could not find any logs")
+
     return {
-      logs: project.logs.map(log => {
-        const { externalId, messages, severity, device, clientCredentials, createdAt, receivedAt } = log
+      data: project.logs.map(log => {
+        const { externalId, message, severity, device, createdAt, receivedAt } = log
         return {
           id: externalId,
-          messages,
+          message,
           severity,
-          device,
+          device: device.externalId,
           project: projectId,
-          client_credentials: clientCredentials?.externalId,
           createdAt: createdAt.getTime(),
           receivedAt: receivedAt.getTime()
         }
@@ -93,34 +178,32 @@ export class ProjectsService {
     }
   }
 
-  async createEvent(projectId: string, dto: CreateEventRequestDTO, request: Request): Promise<CreateEventResponseDTO> {
-
-    const { message, type, severity, device } = dto
-
-    const project = await this.projectsRepo.findOneBy({ externalId: projectId })
+  async getDevices(projectId: string, dto: ReadDevicesRequestDTO): Promise<ReadDevicesResponseDTO> {
+    const project = await this.projectsRepo.findOne({
+      where: {
+        externalId: projectId
+      },
+      relations: {
+        devices: {
+          clientCredentials: true
+        }
+      }
+    })
     if (!project) throw new NotFoundException("Could not find project")
 
-    const accessToken: AccessToken = request["accessToken"]
-    if (!accessToken) {
-      throw new InternalServerErrorException("Could not find AccessToken")
-    }
-
-    const externalId: string = randomBytes(32).toString('hex')
-    if (await this.eventsRepo.exists({ where: { externalId } })) return await this.createEvent(projectId, dto, request)
-
-    await this.eventsRepo.save({
-      externalId,
-      message,
-      type,
-      severity,
-      device,
-      project,
-      clientCredentials: accessToken.clientCredentials,
-      createdAt: new Date(dto.created_at)
-    })
+    if (!project.devices || project.devices.length === 0) throw new NotFoundException("Could not find any devices")
 
     return {
-      message: "Event created"
+      data: project.devices.map(device => {
+        const { externalId, name, clientCredentials, createdAt } = device
+        return {
+          id: externalId,
+          name,
+          project: projectId,
+          client_credentials: clientCredentials.map(cc => cc.clientId),
+          createdAt: createdAt.getTime()
+        }
+      })
     }
   }
 
@@ -131,55 +214,26 @@ export class ProjectsService {
       },
       relations: {
         events: {
-          clientCredentials: true
+          device: true
         }
       }
     })
     if (!project) throw new NotFoundException("Could not find project with this id")
 
     if (!project.events || project.events.length === 0) throw new NotFoundException("Could not find events")
+
     return {
-      events: project.events.map(event => {
-        const { externalId, message, type, severity, device, clientCredentials, createdAt, receivedAt } = event
+      data: project.events.map(event => {
+        const { externalId, message, type, severity, device, createdAt, receivedAt } = event
         return {
           id: externalId,
           message,
           type,
           severity,
-          device,
+          device: device.externalId,
           project: projectId,
-          client_credentials: clientCredentials?.externalId,
           createdAt: createdAt.getTime(),
           receivedAt: receivedAt.getTime()
-        }
-      })
-    }
-  }
-
-  async getClientCredentials(projectId: string, dto: GetClientCredentialsRequestDTO): Promise<GetClientCredentialsResponseDTO> {
-
-    const project = await this.projectsRepo.findOne({
-      where: {
-        externalId: projectId
-      },
-      relations: {
-        clientCredentials: true
-      }
-    })
-    if (!project) throw new NotFoundException("Could not find project")
-
-    if (!project.clientCredentials || project.clientCredentials.length === 0) throw new NotFoundException("Could not find any ClientCredentials")
-
-    return {
-      client_credentials: project.clientCredentials.map(clientCredentials => {
-        const { externalId, clientId, scopes, name, description, issuedAt } = clientCredentials
-        return {
-          id: externalId,
-          client_id: clientId,
-          scope: scopes.join(" "),
-          name,
-          description,
-          issued_at: issuedAt.getTime()
         }
       })
     }

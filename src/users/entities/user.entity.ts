@@ -19,12 +19,6 @@ export class User {
     @OneToMany(() => Project, (project) => project.user)
     projects: Project[]
 
-    @OneToMany(() => ClientCredentials, (clientCredentials) => clientCredentials.user)
-    clientCredentials: ClientCredentials[]
-
-    @OneToMany(() => AccessToken, (accessToken) => accessToken.user)
-    accessTokens: AccessToken[]
-
     @CreateDateColumn({ type: "timestamptz", name: "created_at" })
     createdAt: Date
 

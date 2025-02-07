@@ -1,3 +1,9 @@
+import { Severity } from "../severity.enum"
+
 export class CreateLogResponseDTO {
-    message?: string
+    id: string
+    message: string
+    severity: Severity
+    device: string
+    project: string
 }

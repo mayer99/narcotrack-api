@@ -5,13 +5,13 @@ export class CreateAccessTokenRequestDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Length(10, 100)
+  @Length(64, 64)
   @Matches(/^[a-zA-Z0-9]+$/, { message: 'client_id can only contain letters and numbers' })
   client_id: string
 
   @IsString()
   @IsNotEmpty()
-  @Length(10, 100)
+  @Length(64, 64)
   @Matches(/^[a-zA-Z0-9]+$/, { message: 'client_secret can only contain letters and numbers' })
   client_secret: string
 
@@ -23,8 +23,8 @@ export class CreateAccessTokenRequestDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Length(2, 500)
-  @Matches(/^[a-zA-Z0-9: ]+$/, { message: 'scope can only contain letters, numbers, spaces and colons' })
-  scope: string
+  @Length(64, 64)
+  @Matches(/^[a-zA-Z0-9]+$/, { message: 'audience can only contain letters and numbers' })
+  audience: string
 
 }

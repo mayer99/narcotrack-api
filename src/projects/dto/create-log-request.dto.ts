@@ -3,11 +3,10 @@ import { Severity } from "../severity.enum"
 
 export class CreateLogRequestDTO {
 
-    @IsArray()
-    @ArrayMinSize(1)
-    @IsString({ each: true })
-    @Length(2, 500, { each: true })
-    messages: string[]
+    @IsNotEmpty()
+    @IsString()
+    @Length(2, 200)
+    message: string
 
     @IsNotEmpty()
     @IsEnum(Severity)
@@ -15,7 +14,7 @@ export class CreateLogRequestDTO {
 
     @IsNotEmpty()
     @IsString()
-    @Length(2, 64)
+    @Length(64, 64)
     device: string
 
     @IsNotEmpty()
