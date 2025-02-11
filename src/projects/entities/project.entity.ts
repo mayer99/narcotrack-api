@@ -1,5 +1,5 @@
 import { AccessToken } from "src/auth/entities/access_token.entity";
-import { ClientCredentials } from "src/auth/entities/client_credentials.entity";
+import { ClientCredentials } from "src/projects/entities/client_credentials.entity";
 import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Log } from "./log.entity";

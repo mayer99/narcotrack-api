@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToOne, One
 import { Project } from "src/projects/entities/project.entity";
 import { Severity } from "../severity.enum";
 import { AccessToken } from "src/auth/entities/access_token.entity";
-import { ClientCredentials } from "src/auth/entities/client_credentials.entity";
+import { ClientCredentials } from "src/projects/entities/client_credentials.entity";
 import { Device } from "./device.entity";
 
 @Entity("logs", { schema: "projects" })

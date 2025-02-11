@@ -7,22 +7,14 @@ import { ReadLogsResponseDTO } from './dto/read-logs-response.dto'
 import { ReadLogsRequestDTO } from './dto/read-logs-request.dto'
 import { ReadEventsRequestDTO } from './dto/read-events-request.dto'
 import { ReadEventsResponseDTO } from './dto/read-events-response.dto'
-import { AuthService } from 'src/auth/auth.service'
-import { CreateClientCredentialsRequestDTO } from 'src/auth/dto/create-client-credentials-request.dto'
-import { CreateClientCredentialsResponseDTO } from 'src/auth/dto/create-client-credentials-response.dto'
+import { CreateClientCredentialsRequestDTO } from 'src/projects/dto/create-client-credentials-request.dto'
+import { CreateClientCredentialsResponseDTO } from 'src/projects/dto/create-client-credentials-response.dto'
 import { CreateLogRequestDTO } from './dto/create-log-request.dto'
-import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto'
-import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto'
-import { ClientType } from 'src/auth/client-type.enum'
-import { CheckScope } from 'src/auth/decorators/check-scope.decorator'
-import { CheckProject } from 'src/auth/decorators/check-project.decorator'
-import { Request } from 'express'
-import { AccessControl } from 'src/auth/decorators/access-control.decorator'
-import { AccessLevel } from 'src/auth/enum/access-level.enum'
 import { ReadDevicesRequestDTO } from './dto/read-devices-request.dto'
 import { ReadDevicesResponseDTO } from './dto/read-devices-response.dto'
 import { CreateDeviceRequestDTO } from './dto/create-device-request.dto'
 import { CreateDeviceResponseDTO } from './dto/create-device-response.dto'
+import { RequireScope } from 'src/auth/decorators/require-scope.decorator'
 
 @Controller("projects")
 export class ProjectsController {
@@ -30,8 +22,7 @@ export class ProjectsController {
     private readonly projectsService: ProjectsService
   ) {}
 
-  @CheckScope("logs:create")
-  @CheckProject()
+  @RequireScope("logs:create")
   @Post(':projectId/logs')
   async createLog(
     @Param('projectId') projectId: string,
@@ -40,8 +31,7 @@ export class ProjectsController {
     return await this.projectsService.createLog(projectId, dto)
   }
 
-  @CheckScope("logs:read")
-  @CheckProject()
+  @RequireScope("logs:read")
   @Get(':projectId/logs')
   async getLogs(
     @Param('projectId') projectId: string,
@@ -50,8 +40,7 @@ export class ProjectsController {
     return await this.projectsService.getLogs(projectId, dto);
   }
 
-  @CheckScope("events:create")
-  @CheckProject()
+  @RequireScope("events:create")
   @Post(':projectId/events')
   async createEvent(
     @Param('projectId') projectId: string,
@@ -60,8 +49,7 @@ export class ProjectsController {
     return await this.projectsService.createEvent(projectId, dto)
   }
 
-  @CheckScope("events:read")
-  @CheckProject()
+  @RequireScope("events:read")
   @Get(':projectId/events')
   async getEvents(
     @Param('projectId') projectId: string,
@@ -70,27 +58,34 @@ export class ProjectsController {
     return await this.projectsService.getEvents(projectId, dto)
   }
 
-  @CheckScope("devices:create")
-  @CheckProject()
+  @RequireScope("devices:create")
   @Post(':projectId/devices')
-  async createClientCredentials(
+  async createDevice(
     @Param('projectId') projectId: string,
     @Body() dto: CreateDeviceRequestDTO
   ): Promise<CreateDeviceResponseDTO> {
     return await this.projectsService.createDevice(projectId, dto)
   }
 
-  @CheckScope("devices:read")
-  @CheckProject()
+  @RequireScope("devices:read")
   @Get(':projectId/devices')
-  async getClientCredentials(
+  async getDevices(
     @Param('projectId') projectId: string,
     @Body() dto: ReadDevicesRequestDTO
   ): Promise<ReadDevicesResponseDTO> {
     return await this.projectsService.getDevices(projectId, dto)
   }
 
-  @AccessControl(AccessLevel.PUBLIC)
+  @RequireScope("credentials:create")
+  @Post(':projectId/credentials')
+  async createCredentials(
+    @Param('projectId') projectId: string,
+    @Body() dto: CreateClientCredentialsRequestDTO
+  ): Promise<CreateClientCredentialsResponseDTO> {
+    return await this.projectsService.createClientCredentials(projectId, dto)
+  }
+
+  @RequireScope("none")
   @Get("hello")
   getHello(): string {
     return this.projectsService.getHello();

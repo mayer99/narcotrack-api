@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Project } from 'src/projects/entities/project.entity';
 import { Severity } from '../severity.enum';
-import { ClientCredentials } from 'src/auth/entities/client_credentials.entity';
+import { ClientCredentials } from 'src/projects/entities/client_credentials.entity';
 
 @Entity("devices", { schema: "projects" })
 export class Device {

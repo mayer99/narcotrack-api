@@ -1,4 +1,3 @@
-import { Expose } from 'class-transformer'
 import { IsString, IsNotEmpty, Length, Matches, IsOptional } from 'class-validator'
 
 export class CreateAccessTokenRequestDTO {

@@ -12,8 +12,6 @@ import { CreateProjectResponseDTO } from './dto/create-project-response.dto'
 import { Project } from 'src/projects/entities/project.entity'
 import { ReadProjectsRequestDTO } from './dto/read-projects-request.dto'
 import { ReadProjectsResponseDTO } from './dto/read-projects-response.dto'
-import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto'
-import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto'
 
 @Injectable()
 export class UsersService {

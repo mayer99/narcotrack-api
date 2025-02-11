@@ -1,6 +1,6 @@
 export interface TokenPayload {
-    sub: string // ClientId bei device, 
+    sub: string
     type: TokenType
     project?: string
-    scope: string // 
+    scope: string[]
 }

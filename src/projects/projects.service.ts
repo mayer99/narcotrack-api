@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, HttpStatus, Injectable, Intern
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from 'src/projects/entities/project.entity';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { CreateLogRequestDTO } from './dto/create-log-request.dto';
 import { CreateLogResponseDTO } from './dto/create-log-response.dto';
 import { ReadLogsRequestDTO } from './dto/read-logs-request.dto';
@@ -13,15 +13,14 @@ import { ReadEventsResponseDTO } from './dto/read-events-response.dto';
 import { ReadLogsResponseDTO } from './dto/read-logs-response.dto';
 import { Log } from './entities/log.entity';
 import { Event } from './entities/event.entity';
-import { GetClientCredentialsRequestDTO } from 'src/auth/dto/get-client-credentials-request.dto';
-import { GetClientCredentialsResponseDTO } from 'src/auth/dto/get-client-credentials-response.dto';
-import { Request } from 'express';
-import { AccessToken } from 'src/auth/entities/access_token.entity';
 import { Device } from './entities/device.entity';
 import { CreateDeviceRequestDTO } from './dto/create-device-request.dto';
 import { CreateDeviceResponseDTO } from './dto/create-device-response.dto';
 import { ReadDevicesRequestDTO } from './dto/read-devices-request.dto';
 import { ReadDevicesResponseDTO } from './dto/read-devices-response.dto';
+import { ClientCredentials } from './entities/client_credentials.entity';
+import { CreateClientCredentialsRequestDTO } from './dto/create-client-credentials-request.dto';
+import { CreateClientCredentialsResponseDTO } from './dto/create-client-credentials-response.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -34,8 +33,62 @@ export class ProjectsService {
     @InjectRepository(Device)
     private readonly devicesRepo: Repository<Device>,
     @InjectRepository(Project)
-    private readonly projectsRepo: Repository<Project>
+    private readonly projectsRepo: Repository<Project>,
+    @InjectRepository(ClientCredentials)
+    private readonly credentialsRepo: Repository<ClientCredentials>
   ) { }
+
+  async createClientCredentials(projectId: string, dto: CreateClientCredentialsRequestDTO): Promise<CreateClientCredentialsResponseDTO> {
+    const { name, description } = dto
+    const deviceId = dto.device
+    const scope = dto.scope.replace(/\s+/g, ' ').split(" ")
+
+    const project = await this.projectsRepo.findOneBy({ externalId: projectId })
+    if (!project) {
+      throw new NotFoundException("Could not find project")
+    }
+
+    const device = await this.devicesRepo.findOne({
+      where: {
+        externalId: deviceId,
+        project: {
+          id: project.id
+        }
+      },
+      relations: {
+        project: {
+          user: true
+        }
+      }
+    })
+    if (!device) {
+      throw new NotFoundException("Device not found");
+    }
+
+    const clientId: string = randomBytes(32).toString('hex')
+    if (await this.credentialsRepo.exists({ where: { clientId } })) return await this.createClientCredentials(projectId, dto)
+
+    const clientSecret: string = randomBytes(32).toString('hex')
+    const hashedClientSecret = createHash('sha256').update(clientSecret).digest().toString('hex')
+
+    await this.credentialsRepo.save({
+      clientId,
+      hashedClientSecret,
+      name,
+      description,
+      device,
+      scope
+    })
+
+    return {
+      client_id: clientId,
+      client_secret: clientSecret,
+      name,
+      description,
+      device: deviceId,
+      scope
+    }
+  }
 
   async createDevice(projectId: string, dto: CreateDeviceRequestDTO): Promise<CreateDeviceResponseDTO> {
 

@@ -17,7 +17,7 @@ export class CreateClientCredentialsRequestDTO {
   @IsString()
   @IsNotEmpty()
   @Length(64, 64)
-  @Matches(/^[a-zA-Z0-9 ]+$/, { message: 'name can only contain letters, numbers and spaces' })
+  @Matches(/^[a-zA-Z0-9]+$/, { message: 'device can only contain letters, numbers and spaces' })
   device: string
 
   @IsString()

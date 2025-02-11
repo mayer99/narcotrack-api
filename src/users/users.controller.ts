@@ -4,38 +4,33 @@ import { CreateUserRequestDTO } from './dto/create-user-request.dto';
 import { CreateUserResponseDTO } from './dto/create-user-response.dto';
 import { ReadUsersResponseDTO } from './dto/read-users-response.dto';
 import { ReadUsersRequestDTO } from './dto/read-users-request.dto';
-import { CheckScope } from 'src/auth/decorators/check-scope.decorator';
-import { Request } from 'express';
+import { RequireScope } from 'src/auth/decorators/require-scope.decorator';
 import { CreateProjectRequestDTO } from './dto/create-project-request.dto';
 import { CreateProjectResponseDTO } from './dto/create-project-response.dto';
 import { ReadProjectsResponseDTO } from './dto/read-projects-response.dto';
 import { ReadProjectsRequestDTO } from './dto/read-projects-request.dto';
-import { AuthService } from 'src/auth/auth.service';
-import { CheckUser } from 'src/auth/decorators/check-user.decorator.ts';
-import { AccessControl } from 'src/auth/decorators/access-control.decorator';
-import { AccessLevel } from 'src/auth/enum/access-level.enum';
+import { RequireUser } from 'src/auth/decorators/require-user.decorator.ts';
 
 @Controller('users')
 export class UsersController {
   constructor(
-    private readonly usersService: UsersService,
-    private readonly authService: AuthService
+    private readonly usersService: UsersService
   ) {}
 
-  @CheckScope("users:read")
+  @RequireScope("users:read")
   @Get()
   async readUsers(@Body() dto: ReadUsersRequestDTO): Promise<ReadUsersResponseDTO> {
     return await this.usersService.getUsers(dto)
   }
 
-  @CheckScope("users:create")
+  @RequireScope("users:create")
   @Post()
   async createUser(@Body() dto: CreateUserRequestDTO): Promise<CreateUserResponseDTO> {
     return await this.usersService.createUser(dto)
   }
 
-  @CheckScope("projects:create")
-  @CheckUser()
+  @RequireScope("projects:create")
+  @RequireUser()
   @Post(':userId/projects')
   async createProject(
     @Param('userId') userId: string,
@@ -44,8 +39,8 @@ export class UsersController {
     return await this.usersService.createProject(userId, dto)
   }
 
-  @CheckScope("projects:read")
-  @CheckUser()
+  @RequireScope("projects:read")
+  @RequireUser()
   @Get(':userId/projects')
   async getProjects(
     @Param('userId') userId: string,
@@ -54,6 +49,7 @@ export class UsersController {
     return await this.usersService.getProjects(userId, dto);
   }
 
+  @RequireScope("none")
   @Get("hello")
   getHello(): string {
     return this.usersService.getHello();
