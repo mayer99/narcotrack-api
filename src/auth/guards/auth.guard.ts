@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Project } from 'src/projects/entities/project.entity';
 import { REQUIRE_SCOPE_KEY } from '../decorators/require-scope.decorator';
 import { REQUIRE_PROJECT_KEY } from '../decorators/require-project.decorator';
+import { REQUIRE_USER_KEY } from '../decorators/require-user.decorator.ts';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -49,26 +50,32 @@ export class AuthGuard implements CanActivate {
         try {
             const token: TokenPayload = await this.jwtService.verifyAsync(encodedAccessToken)
             const requireProject = this.reflector.get<boolean>(REQUIRE_PROJECT_KEY, context.getHandler())
+            const projectId = request.params['projectId']
+            if (requireProject) {
+                if (!projectId) {
+                    throw new BadRequestException("You need to provide a project id to access this resource")
+                }
+            }
+            const requireUser = this.reflector.get<boolean>(REQUIRE_USER_KEY, context.getHandler())
+            const userId = request.params['userId']
+            if (requireUser) {
+                if (!userId) {
+                    throw new BadRequestException("You need to provide a user id to access this resource")
+                }
+            }
             switch (token.type) {
                 case TokenType.DEVICE:
-                    if (requireProject) {
-                        const projectId = request.params['projectId'];
-                        if (!projectId) {
-                            throw new BadRequestException("You need to provide a project id to access this resource")
-                        }
-                        if (!token.project) {
-                            throw new BadRequestException("Device tokens need to contain a project reference")
-                        }
-                        if (projectId !== token.project) {
-                            throw new ForbiddenException("Device tokens can only access their own project")
-                        }
+                    if (!requireProject) {
+                        throw new ForbiddenException("Device tokens can only endpoints that are related to projects")
+                    }
+                    if (!token.project) {
+                        throw new BadRequestException("Device tokens need to contain a project reference")
+                    }
+                    if (projectId !== token.project) {
+                        throw new ForbiddenException("Device tokens can only access their own project")
                     }
                 case TokenType.USER:
                     if (requireProject) {
-                        const projectId = request.params['projectId'];
-                        if (!projectId) {
-                            throw new BadRequestException("You need to provide a project id to access this resource")
-                        }
                         const project = await this.projectsRepo.findOne({
                             where: { externalId: projectId },
                             relations: { user: true }
@@ -80,12 +87,17 @@ export class AuthGuard implements CanActivate {
                             throw new ForbiddenException("Cannot acces foreign projects")
                         }
                     }
+                    if (requireUser) {
+                        if (userId !== token.sub) {
+                            throw new ForbiddenException("Cannot access foreign user accounts")
+                        }
+                    }
                 case TokenType.SERVICE:
                     break
                 default:
                     throw new BadRequestException("Unknown type of token")
             }
-            
+
             if (token.scope.includes(requiredScope)) {
                 throw new ForbiddenException("Insufficient permissions")
             }
